@@ -3,16 +3,13 @@
 use strict;
 use warnings;
 
+use Test::JSON::Schema::Acceptance;
 use Data::Dumper;
 use Data::JSONSchema::Ajv;
 use Test::More;
 
 # This file was inspired by:
 # http://cpansearch.perl.org/src/JHTHORSEN/JSON-Validator-0.85/t/acceptance.t
-
-plan skip_all => 'cpanm Test::JSON::Schema::Acceptance'
-    unless eval 'use Test::JSON::Schema::Acceptance; 1';
-
 my $ajv = Data::JSONSchema::Ajv->new( undef, { convert_boolean => 1 } );
 
 my $accepter = Test::JSON::Schema::Acceptance->new(4);
