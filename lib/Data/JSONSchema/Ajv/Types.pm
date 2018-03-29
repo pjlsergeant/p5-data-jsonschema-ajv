@@ -3,6 +3,20 @@ package Data::JSONSchema::Ajv::Types;
 use strict;
 use warnings;
 
+=head1 NAME
+
+Data::JSONSchema::Ajv::Types
+
+=head1 DESCRIPTION
+
+Helpers for JSON <-> Perl translations
+
+=head1 SUMMARY
+
+No user-serviceable parts in here
+
+=cut
+
 use Data::Visitor::Callback;
 use Data::GUID;
 
@@ -62,3 +76,5 @@ function data_json_schema_ajv_type_exchange(obj) {
 }
 
 JavaScript
+
+1;

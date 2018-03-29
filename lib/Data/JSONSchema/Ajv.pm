@@ -6,7 +6,6 @@ use Types::Serialiser;
 
 use Data::JSONSchema::Ajv::src;
 use Data::JSONSchema::Ajv::Types;
-use Data::JSONSchema::Ajv::SchemaRefs;
 
 =head1 NAME
 
@@ -198,7 +197,7 @@ package Data::JSONSchema::Ajv {
             '_counter' => 0,
         }, $class;
 
-        $self->inject_escaped( ajvOptions => $ajv_options );
+        $self->_inject_escaped( ajvOptions => $ajv_options );
         $js->eval('var ajv = new Ajv(ajvOptions);');
 
         return $self;
@@ -211,7 +210,7 @@ package Data::JSONSchema::Ajv {
         my $schema_name    = "schemaDef_$counter";
         my $validator_name = "validator_$counter";
 
-        $self->inject_escaped( $schema_name, $schema );
+        $self->_inject_escaped( $schema_name, $schema );
 
         $self->{'_context'}
             ->eval("var $validator_name = ajv.compile($schema_name);");
@@ -221,7 +220,7 @@ package Data::JSONSchema::Ajv {
 
     sub duktape { my $self = shift; return $self->{'_context'}; }
 
-    sub inject_escaped {
+    sub _inject_escaped {
         my ( $self, $name, $data ) = @_;
 
         my $js = $self->duktape;
@@ -249,7 +248,7 @@ package Data::JSONSchema::Ajv::Validator {
         my $js = $parent->{'_context'};
 
         my $data_name = "data_$name";
-        $parent->inject_escaped( $data_name, $input );
+        $parent->_inject_escaped( $data_name, $input );
 
         $js->eval("var result = $name($data_name)");
         $js->set( $data_name, undef );
