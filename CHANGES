@@ -1,4 +1,5 @@
-
+0.06  - ???
+- Bumped Ajv to 6.8.1
 0.05  - 29-May-2018
 - Using Ajv 6.5.0
 - Support drafts 04, 06, 07
