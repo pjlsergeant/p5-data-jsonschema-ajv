@@ -80,16 +80,30 @@ Light-weight in this context just means it's not very many lines of actual Perl
 
   my $ajv = Data::JSONSchema::Ajv->new(
       { v5 => $JSON::PP::true }, # Ajv options. Try: {},
-      {}, # Module options. See `draft`
+      {}, # Module options. See below
   );
 
 Instantiates a new L<JavaScript::Duktape::XS> environment and loads C<Ajv> into it.
 Accepts two hashrefs (or undefs). The first is passed straight through to
 C<Ajv>, whose options are documented L<here|https://epoberezkin.github.io/ajv/>.
 
-The second one allows you to specify a JSON Schema draft version. Allowable
-options are C<04>, C<06>, and C<07>. No support for multiple schemas at this
-time. Default is C<07>.
+The second one allows you to specify options of this module:
+
+=over
+
+=item ajv_src
+
+String that contains source code of standalone version of Ajv library, which can be
+found L<here|https://cdnjs.com/libraries/ajv>. This module already has some version
+(possibly not last) of Ajv hardcoded inside it and will use it if this option doesn't
+specified.
+
+=item draft
+
+A JSON Schema draft version as a string. Allowable values are C<04>, C<06>, and C<07>.
+No support for multiple schemas at this time. Default is C<07>.
+
+=back
 
 =head2 make_validator
 
@@ -166,6 +180,7 @@ package Data::JSONSchema::Ajv {
 
         $my_options ||= {};
         my $draft_version = delete $my_options->{'draft'} // '07';
+        my $ajv_src = delete $my_options->{ajv_src};
         my $json_obj = delete $my_options->{'json'}
             // Cpanel::JSON::XS->new->ascii->allow_nonref;
         if ( keys %$my_options ) {
@@ -173,7 +188,7 @@ package Data::JSONSchema::Ajv {
         }
 
         my $js = JavaScript::Duktape::XS->new();
-        $js->eval($Data::JSONSchema::Ajv::src::src);
+        $js->eval($ajv_src || $Data::JSONSchema::Ajv::src::src);
 
         # Setup appropriately for different version of the schema
         if ( $draft_version eq '04' ) {
