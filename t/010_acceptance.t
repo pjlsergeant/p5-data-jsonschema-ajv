@@ -17,7 +17,7 @@ die "Missing JSON test suite at $path" unless $path->exists;
 # Dive through the multi-hierarchy tests!
 for my $version (qw/4 6 7/) {
 
-    my $ajv = Data::JSONSchema::Ajv->new({},{ draft => "0$version", ajv_src => rand > 0.5 ? $Data::JSONSchema::Ajv::src::src : undef });
+    my $ajv = Data::JSONSchema::Ajv->new({},{ draft => "0$version" });
 
     subtest "Draft $version", sub {
         my $version_directory = $path->child("draft$version");

@@ -124,11 +124,20 @@ Single method object:
 =head2 validate
 
   my $errors = $validator->validate( $data_structure );
+  my $errors = $validator->validate( \$data_structure );
 
-Validate a data-structure against the schema. Returns C<undef> on success, and
-a data-structure complaining on failure. The data-structure is whatever C<Ajv>
-produces - you can either read its documentation, or be lazy and simply
-L<Data::Dumper> it.
+Validate a data-structure against the schema. Whith some options specified
+(like C<removeAdditional>, C<coerceTypes>) Ajv may modify input data. If you
+want to receive this modifications you need to pass your data structure by
+reference: for example if you normally pass hashref or arrayref in this case
+you need to pass reference to hashref or reference to arrayref. If you are
+validating just a simple scalar like string or number you can also pass it
+by reference, but you'll not get any data modifications because on Ajv's side
+they are passed by value and can't be modified. You can try to wrap such
+scalars in array with one element and modify schema a little to pass this
+limitation. Returns C<undef> on success, and a data-structure complaining
+on failure. The data-structure is whatever C<Ajv> produces - you can either
+read its documentation, or be lazy and simply L<Data::Dumper> it.
 
 =head1 BOOLEANS AND UNDEFINED/NULL
 
@@ -219,6 +228,8 @@ package Data::JSONSchema::Ajv {
         $self->_inject_escaped( ajvOptions => $ajv_options );
 
         $js->eval('var ajv = new Ajv(ajvOptions);');
+        $js->typeof('ajv') ne 'undefined'
+            or die "Can't create ajv object. Bad `ajv_src' specified?";
 
         return $self;
     }
@@ -239,6 +250,9 @@ package Data::JSONSchema::Ajv {
             $self->{'_context'}
                 ->eval("var $validator_name = ajv.compile($schema);");
         }
+        
+        $self->{'_context'}->typeof($validator_name) ne 'undefined'
+            or die "Can't compile schema passed";
 
         return bless [ $self => $validator_name ],
             'Data::JSONSchema::Ajv::Validator';
@@ -269,14 +283,21 @@ package Data::JSONSchema::Ajv::Validator {
         my ( $self,   $input ) = @_;
         my ( $parent, $name )  = @$self;
         my $js = $parent->{'_context'};
+        
+        my $input_reftype = ref $input;
 
         my $data_name = "data_$name";
-        $parent->_inject_escaped( $data_name, $input );
+        $parent->_inject_escaped( $data_name, $input_reftype eq 'REF' || $input_reftype eq 'SCALAR' ? $$input : $input );
 
         $js->eval("var result = $name($data_name)");
-        $js->set( $data_name, undef );
 
         my $result = $js->get('result');
+        
+        if ( $input_reftype eq 'REF' ) {
+            $$input = $js->get($data_name);
+        }
+
+        $js->set( $data_name, undef );
 
         if ($result) {
             return;
