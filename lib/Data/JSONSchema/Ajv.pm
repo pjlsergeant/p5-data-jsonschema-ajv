@@ -176,8 +176,7 @@ This Perl wrapper written by Peter Sergeant.
 
 package Data::JSONSchema::Ajv {
     use Carp qw/croak/;
-    use Storable qw/dclone/;
-    use Cpanel::JSON::XS qw/decode_json/;
+    use Cpanel::JSON::XS;
 
     sub new {
         my ( $class, $ajv_options, $my_options ) = @_;
@@ -207,7 +206,7 @@ package Data::JSONSchema::Ajv {
             warn "Over-riding 'meta' as you specified draft-04"
                 if exists $ajv_options->{'meta'};
             $ajv_options->{'meta'}
-                = decode_json($Data::JSONSchema::Ajv::src::04::src);
+                = $json_obj->decode($Data::JSONSchema::Ajv::src::04::src);
         }
         elsif ( $draft_version eq '06' ) {
             warn "Over-riding 'meta' as you specified draft-06"
@@ -225,7 +224,7 @@ package Data::JSONSchema::Ajv {
             '_json'    => $json_obj,
         }, $class;
 
-        $self->_inject_escaped( ajvOptions => $ajv_options );
+        $js->set( ajvOptions => $ajv_options );
 
         $js->eval('var ajv = new Ajv(ajvOptions);');
         $js->typeof('ajv') ne 'undefined'
@@ -242,7 +241,7 @@ package Data::JSONSchema::Ajv {
         my $validator_name = "validator_$counter";
 
         if ( ref $schema ) {
-            $self->_inject_escaped( $schema_name, $schema );
+            $self->{'_context'}->set( $schema_name, $schema );
             $self->{'_context'}
                 ->eval("var $validator_name = ajv.compile($schema_name);");
         }
@@ -259,19 +258,6 @@ package Data::JSONSchema::Ajv {
     }
 
     sub duktape { my $self = shift; return $self->{'_context'}; }
-
-    sub _inject_escaped {
-        my ( $self, $name, $data ) = @_;
-
-        my $js = $self->duktape;
-
-        # Change various markers to be magic strings
-        my $data_dump = $self->{'_json'}->encode($data);
-
-        # Change them back in JS land if needed
-        $js->eval("$name = $data_dump;");
-    }
-
 };
 
 package Data::JSONSchema::Ajv::Validator {
@@ -287,7 +273,7 @@ package Data::JSONSchema::Ajv::Validator {
         my $input_reftype = ref $input;
 
         my $data_name = "data_$name";
-        $parent->_inject_escaped( $data_name, $input_reftype eq 'REF' || $input_reftype eq 'SCALAR' ? $$input : $input );
+        $js->set( $data_name, $input_reftype eq 'REF' || $input_reftype eq 'SCALAR' ? $$input : $input );
 
         $js->eval("var result = $name($data_name)");
 
